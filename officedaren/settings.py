@@ -14,7 +14,8 @@ SPIDER_MODULES = ['officedaren.spiders']
 NEWSPIDER_MODULE = 'officedaren.spiders'
 
 ITEM_PIPELINES = {
-  'officedaren.pipelines.JsonPipeline': 300,
+  #'officedaren.pipelines.JsonPipeline': 300,
+  'officedaren.pipelines.SQLiteStorePipeline': 300,
 }
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'officedaren (+http://www.yourdomain.com)'

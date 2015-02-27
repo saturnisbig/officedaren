@@ -12,15 +12,9 @@ from scrapy import Item, Field
 class ArticleItem(Item):
     # define the fields for your item here like:
     # name = scrapy.Field()
+    aid = Field()
     title = Field()
     content = Field()
     category = Field()
     publishTime = Field()
 
-
-class WeiboSpiderItem(Item):
-    # define the fields for your item here like:
-    # name = scrapy.Field()
-    url = Field()
-    hongbao_id = Field()
-    pass
