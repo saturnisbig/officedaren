@@ -8,6 +8,7 @@ import os
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors.lxmlhtml import LxmlLinkExtractor as lxml
 #from scrapy.selector import Selector
+from scrapy import log
 
 from officedaren.items import ArticleItem
 
@@ -17,7 +18,9 @@ SITE_NAME = 'http://www.officedaren.com'
 class WordArticleSpider(CrawlSpider):
     name = "examw.com"
     allowed_domains = ["examw.com"]
-    start_urls = ['http://www.examw.com/oa/word/']
+    start_urls = ['http://www.examw.com/oa/word/',
+                  'http://www.examw.com/oa/excel/',
+                  'http://www.examw.com/oa/powerpoint/']
     #allowed_domains = ["officezu.com"]
     #start_urls = ['http://www.officezu.com/word/2003']
                   #'http://www.officezu.com/word/jiqiao']
@@ -26,8 +29,12 @@ class WordArticleSpider(CrawlSpider):
         #Rule(lxml(allow=('/a/word/\d{3}.html$', )), callback='parse_item'),
         #Rule(lxml(allow=('/word/2003/index\d+.html$', )), follow=True),
         #Rule(lxml(allow=('/word/jiqiao/index\d+.html$', )), follow=True),
-        Rule(lxml(allow=('/oa/word/\d+/?$', )), callback='parse_2'),
+        Rule(lxml(allow=('/oa/word/\d+/?$', )), callback='parse_word'),
         #Rule(lxml(allow=('/oa/word/indexA\d+.html$', )), follow=True),
+        #Rule(lxml(allow=('/oa/excel/\d+/?$', )), callback='parse_excel'),
+        #Rule(lxml(allow=('/oa/excel/indexA\d+.html$', )), follow=True),
+        #Rule(lxml(allow=('/oa/powerpoint/\d+/?$', )), callback='parse_powerpoint'),
+        #Rule(lxml(allow=('/oa/powerpoint/indexA\d+.html$', )), follow=True),
     )
 
     def parse_item(self, response):
@@ -64,8 +71,7 @@ class WordArticleSpider(CrawlSpider):
                 fd.write(img.read())
             time.sleep(1)
 
-
-    def parse_2(self, response):
+    def parse_examw_item(self, response, cat):
         items = []
         content = response.css('#NewsBox::text').extract()
         if content[0].strip():
@@ -73,10 +79,20 @@ class WordArticleSpider(CrawlSpider):
             item['aid'] = response.url.split('/')[-2]
             item['title'] = response.css('#News h3::text').extract()[0]
             item['content'] = ''.join(content)
-            #item['category'] = 'word'
+            item['category'] = cat
             #print item['title'], item['content']
             items.append(item)
         else:
             # log innormal article
-            pass
+            #pass
+            self.log('"%s" Not Parsed' % response.url, level=log.WARNING)
         return items
+
+    def parse_word(self, response):
+        return self.parse_examw_item(response, 'word')
+
+    def parse_excel(self, response):
+        return self.parse_examw_item(response, 'excel')
+
+    def parse_powerpoint(self, response):
+        return self.parse_examw_item(response, 'powerpoint')
