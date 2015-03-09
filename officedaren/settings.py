@@ -19,3 +19,5 @@ ITEM_PIPELINES = {
 }
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'officedaren (+http://www.yourdomain.com)'
+
+LOG_FILE = 'log.txt'
