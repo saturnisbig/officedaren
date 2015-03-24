@@ -29,12 +29,15 @@ class WordArticleSpider(CrawlSpider):
         #Rule(lxml(allow=('/a/word/\d{3}.html$', )), callback='parse_item'),
         #Rule(lxml(allow=('/word/2003/index\d+.html$', )), follow=True),
         #Rule(lxml(allow=('/word/jiqiao/index\d+.html$', )), follow=True),
-        Rule(lxml(allow=('/oa/word/\d+/?$', )), callback='parse_word'),
-        #Rule(lxml(allow=('/oa/word/indexA\d+.html$', )), follow=True),
-        #Rule(lxml(allow=('/oa/excel/\d+/?$', )), callback='parse_excel'),
-        #Rule(lxml(allow=('/oa/excel/indexA\d+.html$', )), follow=True),
-        #Rule(lxml(allow=('/oa/powerpoint/\d+/?$', )), callback='parse_powerpoint'),
-        #Rule(lxml(allow=('/oa/powerpoint/indexA\d+.html$', )), follow=True),
+        Rule(lxml(allow=('/oa/word/\d+/$', )), callback='parse_word'),
+        Rule(lxml(allow=('/oa/word/indexA\d.html$', )), follow=True),
+        Rule(lxml(allow=('/oa/word/index\d+.html$', )), follow=True),
+        Rule(lxml(allow=('/oa/excel/\d+/?$', )), callback='parse_excel'),
+        Rule(lxml(allow=('/oa/excel/indexA\d.html$', )), follow=True),
+        Rule(lxml(allow=('/oa/excel/index\d+.html$', )), follow=True),
+        Rule(lxml(allow=('/oa/powerpoint/\d+/?$', )), callback='parse_powerpoint'),
+        Rule(lxml(allow=('/oa/powerpoint/indexA\d.html$', )), follow=True),
+        Rule(lxml(allow=('/oa/powerpoint/index\d+.html$', )), follow=True),
     )
 
     def parse_item(self, response):
@@ -71,21 +74,43 @@ class WordArticleSpider(CrawlSpider):
                 fd.write(img.read())
             time.sleep(1)
 
+    def extract_article(self, response, content):
+        aid = response.url.split('/')[-2]
+        # 解决乱码cp1252, 比如171852
+        title = response.css('#News h3::text').extract()[0]
+        content = ''.join(content)
+        if response.encoding == 'cp1252':
+            title = title.encode('cp1252').decode('gb2312').encode('utf-8')
+            content = content.encode('cp1252').decode('gb2312').encode('utf-8')
+        return aid, title, content
+
     def parse_examw_item(self, response, cat):
         items = []
-        content = response.css('#NewsBox::text').extract()
-        if content[0].strip():
+        # check if has p tag in html file, 比如211756
+        has_paragraph = response.xpath('//div[@id="NewsBox"]/p[descendant-or-self::text()]').extract()
+        if len(has_paragraph) > 0:
             item = ArticleItem()
-            item['aid'] = response.url.split('/')[-2]
-            item['title'] = response.css('#News h3::text').extract()[0]
-            item['content'] = ''.join(content)
+            aid, title, content = self.extract_article(response, has_paragraph)
+            item['aid'] = aid
             item['category'] = cat
-            #print item['title'], item['content']
+            item['title'] = title
+            item['content'] = content
             items.append(item)
         else:
-            # log innormal article
-            #pass
-            self.log('"%s" Not Parsed' % response.url, level=log.WARNING)
+            content = response.css('#NewsBox::text').extract()
+            if content[0].strip():
+                item = ArticleItem()
+                aid, title, content = self.extract_article(response, content)
+                item['aid'] = aid
+                item['category'] = cat
+                item['title'] = title
+                item['content'] = content
+                items.append(item)
+            else:
+                # log innormal article
+                #pass
+                self.log('"%s" NotParsed' % response.url, level=log.WARNING)
+        time.sleep(1)
         return items
 
     def parse_word(self, response):
