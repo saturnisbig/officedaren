@@ -1,0 +1,71 @@
+
+# 一些Bug记载及新功能的补充
+
+## 2015-03-09 20:27:31 
+
+抓取www.examw.com中的word、excel等办公软件使用文章
+文章的几种格式：
+
+- 内容全部为文字，且段与段之间以`<br />`隔开的
+比如：www.examw.com/oa/word/212267/
+直接将`#NewsBox`下的内容extract出来，对`\r\n\t`等字符过滤，然后
+重新拼凑起来即可.
+
+- 文章全部是文字且段落之间存在`<p>`标签的
+比如：www.examw.com/oa/wps/207790/
+
+
+- 文章存在图片的处理
+比如文章：http://www.examw.com/oa/wps/206167/
+
+- 2015-03-09 22:55:06
+明天：将抓取的数据与Django Model定义的对象关联起来，通过
+Django进行数据存储。
+
+## 2015-03-10 19:47:35
+
+- 如何和Django关联起来
+
+## 2015-03-23 20:12:00
+
+## 2015-03-24 21:02:35 - 2015-03-24 21:45:01
+解决抓取乱码问题，对抓取网页内容编码进行转换，将cp1252转为utf-8
+参考：www.pythonclub.org/python-basic/codec
+
+Scrapy中文乱码(my.oschina.net/leopardsaga/blog/144301)
+Scrapy默认读取的内容ascii编码，而对中文不言而喻会出错，中文三大编码，后面的标准是前面标准的扩展。
+GB2312 < GBK < GB18030
+Scrapy项目获取文本编码的方法有：
+1. 安装chardet第三方包，chardet.dectet()。
+2. import chardetect，好像其是封装chardet包。
+3. Scrapy返回内容 response.encoding属性。
+其中response.encoding返回可能不很准，如把gbk标成gb18030。而chardet或chardetect也不保证100%正确，且传给chardet.dectet()不是文件名，是字符串，若是大文件，则判断成本很高。
+暂时不知真正高效的方法。
+
+## 2015-03-24 22:24:32 - 2015-03-24 22:44:29
+内容存在p标签的抓取
+还未开始正式抓取
+
+## 2015-03-26 20:36:50 - 2015-03-26 21:06:55
+修改抓取不全的问题，可参加该文章情况。www.examw.com/oa/excel/191026/
+
+如果想要获取某个标签内嵌的所有内容，包括该标签内嵌的标签也有内容的话
+也一并提取。那么可以采用下面的方法：
+
+`<div id="test3">我左青龙，<span id="tiger">右白虎，<ul>上朱雀，<li>下玄武。</li></ul>老牛在当中，</span>龙头在胸口。<div>`
+要提取上面的中文的话，可以用下面的方法：
+
+    data = selector.xpath('//div[@id="test3"]')
+    content = data.xpath('string(.)').extract()[0]
+
+参考：www.cnblogs.com/xieqiankun/p/xpath_extract_text.html
+
+## 2015-03-26 22:11:31
+开始写抓取xuexila.com的爬虫
+选取的样本页面：
+
+2003/22512.html -- 仅有几个简单的<br>分开文本
+2003/22396.html -- 文章中存在图片的
+
+
+

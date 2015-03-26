@@ -16,7 +16,8 @@ from scrapy.xlib.pydispatch import dispatcher
 class JsonPipeline(object):
 
     def __init__(self):
-        self.file = codecs.open('examwd.json', 'w', encoding="utf-8")
+        #self.file = codecs.open('examwd.json', 'w', encoding="utf-8")
+        self.file = codecs.open('xuexila.json', 'w', encoding="utf-8")
 
     def process_item(self, item, spider):
         line = json.dumps(dict(item), ensure_ascii=False) + '\n'
