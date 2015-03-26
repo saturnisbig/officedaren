@@ -98,7 +98,8 @@ class WordArticleSpider(CrawlSpider):
             items.append(item)
         else:
             content = response.css('#NewsBox::text').extract()
-            if content[0].strip():
+            content = [line.strip() for line in content]
+            if len(content) > 0:
                 item = ArticleItem()
                 aid, title, content = self.extract_article(response, content)
                 item['aid'] = aid
