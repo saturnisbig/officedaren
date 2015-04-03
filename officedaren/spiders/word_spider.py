@@ -41,38 +41,7 @@ class WordArticleSpider(CrawlSpider):
     )
 
     def parse_item(self, response):
-        items = []
-        pat_a = re.compile(r'href=".+?"', re.M)
-        pat_img = re.compile(r'src="(http:.+?)"', re.M)
-        try:
-            content = response.xpath('//div[@class="c_content"]').extract()[0]
-        except IndexError:
-            print "Parse content error:", response.url
-        else:
-            try:
-                img_url = pat_img.findall(content)[0]
-            except IndexError:
-                print 'Not a normal articel', response.url
-            else:
-                title = response.css('#index_left .c_title::text').extract()[0]
-                item = ArticleItem()
-                img_name = img_url.split('/')[-1]
-                self.fetch_img(img_url, img_name)
-                content = pat_a.sub(SITE_NAME+'/word/', content)
-                content = pat_img.sub(SITE_NAME+'/media/'+img_name, content)
-                item['title'] = title
-                item['content'] = content
-                item['category'] = 'word'
-                items.append(item)
-        return items
-
-    def fetch_img(self, img_url, img_name):
-        img_path = 'media/' + img_name
-        if not os.path.exists(img_path):
-            img = urllib2.urlopen(img_url)
-            with open(img_path, 'wb') as fd:
-                fd.write(img.read())
-            time.sleep(1)
+        pass
 
     def extract_article(self, response, content):
         aid = response.url.split('/')[-2]
@@ -80,37 +49,37 @@ class WordArticleSpider(CrawlSpider):
         title = response.css('#News h3::text').extract()[0]
         content = ''.join(content)
         if response.encoding == 'cp1252':
-            title = title.encode('cp1252').decode('gb2312').encode('utf-8')
-            content = content.encode('cp1252').decode('gb2312').encode('utf-8')
+            try:
+                title = title.encode('cp1252').decode('gb2312').encode('utf-8')
+                content = content.encode('cp1252').decode('gb2312').encode('utf-8')
+            except UnicodeEncodeError, UnicodeDecodeError:
+                title = title.replace(' ', '')
+                content = content.replace(' ', '')
+                title = title.encode('cp1252').decode('gbk').encode('utf-8')
+                content = content.encode('cp1252').decode('gbk').encode('utf-8')
         return aid, title, content
 
     def parse_examw_item(self, response, cat):
         items = []
         # check if has p tag in html file, 比如211756
-        has_paragraph = response.xpath('//div[@id="NewsBox"]/p[descendant-or-self::text()]').extract()
-        if len(has_paragraph) > 0:
-            item = ArticleItem()
-            aid, title, content = self.extract_article(response, has_paragraph)
-            item['aid'] = aid
-            item['category'] = cat
-            item['title'] = title
-            item['content'] = content
-            items.append(item)
-        else:
-            content = response.css('#NewsBox::text').extract()
-            content = [line.strip() for line in content]
-            if len(content) > 0:
-                item = ArticleItem()
-                aid, title, content = self.extract_article(response, content)
-                item['aid'] = aid
-                item['category'] = cat
-                item['title'] = title
-                item['content'] = content
-                items.append(item)
-            else:
-                # log innormal article
-                #pass
-                self.log('"%s" NotParsed' % response.url, level=log.WARNING)
+        content_p = response.xpath('//div[@id="NewsBox"]/p[descendant-or-self::text()]').extract()
+        content_1 = ''
+        content_2 = ''
+        if len(content_p) > 0:
+            aid, title, content_1 = self.extract_article(response, content_p)
+
+        content_box = response.css('#NewsBox::text').extract()
+        content_box = [line.strip() for line in content_box]
+        if len(content_box) > 0:
+            aid, title, content_2 = self.extract_article(response, content_box)
+        if not len(content_box) and not len(content_p):
+            self.log('"%s" NotParsed' % response.url, level=log.WARNING)
+        item = ArticleItem()
+        item['aid'] = aid
+        item['title'] = title
+        item['content'] = content_1 + content_2
+        item['category'] = cat
+        items.append(item)
         time.sleep(1)
         return items
 
